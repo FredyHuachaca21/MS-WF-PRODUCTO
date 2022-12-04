@@ -70,7 +70,7 @@ public class ProductoController {
 
         Mono<Producto> productoDB = service.buscarPorId(id);
 
-        return productoDB.flatMap(p-> service.eliminar(p.).then(ServerResponse.noContent().build()))
+        return productoDB.flatMap(p-> service.eliminar(p).then(ServerResponse.noContent().build()))
                 .switchIfEmpty(ServerResponse.notFound().build());
 
     }
