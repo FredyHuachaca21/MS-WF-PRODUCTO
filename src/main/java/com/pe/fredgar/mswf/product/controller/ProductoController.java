@@ -3,20 +3,55 @@ package com.pe.fredgar.mswf.product.controller;
 import com.pe.fredgar.mswf.product.model.Producto;
 import com.pe.fredgar.mswf.product.service.ProductoServiceImpl;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
+import java.io.File;
 import java.net.URI;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Component
-@AllArgsConstructor
 public class ProductoController {
 
+    @Autowired
     private ProductoServiceImpl service;
+
+    @Value("${config.uploads.path}")
+    private String ruta;
+
+    public Mono<ServerResponse> subirImagen(ServerRequest request){
+        String id = request.pathVariable("id");
+
+        return request.multipartData()
+                .map(multipart -> multipart.toSingleValueMap()
+                .get("file"))
+                .cast(FilePart.class)
+                .flatMap(file -> service.buscarPorId(id)
+                            .flatMap(producto ->
+                            {
+                                producto.setFoto(UUID.randomUUID().toString()
+                                        + "-" + file.filename()
+                                        .replace(" ", "-")
+                                        .replace(":", "-")
+                                        .replace("/", "-"));
+                                return file.transferTo(new File(ruta + producto.getFoto()))
+                                        .then(service.guardar(producto));
+                            })).flatMap(prod ->
+                            {
+                                return ServerResponse.created(URI.create("/api/v1/productos/".concat(prod.getId())))
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .bodyValue(prod)
+                                        .switchIfEmpty(ServerResponse.notFound().build());
+                            });
+
+    }
 
     public Mono<ServerResponse> listarProductos(ServerRequest request){
         return ServerResponse.ok()
