@@ -1,5 +1,6 @@
 package com.pe.fredgar.mswf.product.controller;
 
+import com.pe.fredgar.mswf.product.model.Categoria;
 import com.pe.fredgar.mswf.product.model.Producto;
 import com.pe.fredgar.mswf.product.service.ProductoServiceImpl;
 import lombok.AllArgsConstructor;
@@ -7,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.http.codec.multipart.FormFieldPart;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -26,6 +28,42 @@ public class ProductoController {
     @Value("${config.uploads.path}")
     private String ruta;
 
+
+    public Mono<ServerResponse> crearProductoConFoto(ServerRequest request){
+
+        Mono<Producto> productoMono = request.multipartData()
+                .map(multipart->{
+                    FormFieldPart nombre = (FormFieldPart) multipart.toSingleValueMap().get("nombre");
+                    FormFieldPart precio = (FormFieldPart) multipart.toSingleValueMap().get("precio");
+                    FormFieldPart categoriaId = (FormFieldPart) multipart.toSingleValueMap().get("categoria.id");
+                    FormFieldPart categoriaNombre = (FormFieldPart) multipart.toSingleValueMap().get("categoria.nombre");
+
+                    Categoria categoria = new Categoria(categoriaNombre.value());
+                    categoria.setId(categoriaId.value());
+                    return new Producto(nombre.value(), Double.parseDouble(precio.value()), categoria);
+                });
+
+        return request.multipartData()
+                .map(multipart -> multipart.toSingleValueMap()
+                        .get("file"))
+                .cast(FilePart.class)
+                .flatMap(file -> productoMono
+                        .flatMap(producto ->
+                        {
+                            producto.setFoto(UUID.randomUUID().toString()
+                                    + "-" + file.filename()
+                                    .replaceAll("[ /*:]", "-"));
+                            producto.setFechaCreacion(LocalDate.now());
+                            return file.transferTo(new File(ruta + producto.getFoto()))
+                                    .then(service.guardar(producto));
+                        })).flatMap(prod ->
+                {
+                    return ServerResponse.created(URI.create("/api/v1/productos/".concat(prod.getId())))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .bodyValue(prod);
+                });
+
+    }
     public Mono<ServerResponse> subirImagen(ServerRequest request){
         String id = request.pathVariable("id");
 

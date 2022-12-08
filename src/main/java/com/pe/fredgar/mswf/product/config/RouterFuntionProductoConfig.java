@@ -18,6 +18,7 @@ public class RouterFuntionProductoConfig {
                 .andRoute(GET("/api/v1/producto/{id}"), controller::listarProductoPorId)
                 .andRoute(POST("/api/v1/producto"), controller::crear)
                 .andRoute(POST("/api/v1/producto/subirImagen/{id}"), controller::subirImagen)
+                .andRoute(POST("/api/v1/producto/crearConFoto"), controller::crearProductoConFoto)
                 .andRoute(PUT("/api/v1/producto/{id}"), controller::editarProducto)
                 .andRoute(DELETE("/api/v1/producto/{id}"), controller::eliminarProducto)
                 .andRoute(DELETE("/api/v1/producto/{id}"), controller::eliminarProductoPorID);
