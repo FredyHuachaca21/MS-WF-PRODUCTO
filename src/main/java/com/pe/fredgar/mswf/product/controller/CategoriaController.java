@@ -1,6 +1,7 @@
 package com.pe.fredgar.mswf.product.controller;
 
 import com.pe.fredgar.mswf.product.model.Categoria;
+import com.pe.fredgar.mswf.product.model.Producto;
 import com.pe.fredgar.mswf.product.service.CategoriaServiceImpl;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
@@ -25,5 +26,11 @@ public class CategoriaController {
                 .created(URI.create("/api/v1/categoria/".concat(cat.getId())))
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(cat));
+    }
+
+    public Mono<ServerResponse> listarCategorias(ServerRequest request){
+        return ServerResponse.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(service.listar(), Categoria.class);
     }
 }

@@ -13,6 +13,7 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 public class RouterFuntionCategoriaConfig {
     @Bean
     public RouterFunction<ServerResponse> routesCategoria(CategoriaController controller){
-        return route(POST("/api/v1/categoria"), controller::crearCategoria);
+        return route(POST("/api/v1/categoria"), controller::crearCategoria)
+                .andRoute(GET("/api/v1/categoria/lista"), controller::listarCategorias);
     }
 }
